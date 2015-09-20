@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Dom Control unit tests</title>
+  <link rel="stylesheet" href="qunit-1.18.0.css">
+</head>
+
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="../build/clarity.js"></script>
+  <script src="qunit-1.18.0.js"></script>
+  <script>
+    /* global QUnit, Clarity */
+
+    QUnit.module("Requirments");
+    QUnit.test("document.querySelector", function(assert) {
+      assert.strictEqual(typeof document.querySelector, 'function');
+      assert.ok(document.querySelector('body') instanceof HTMLElement, 'returns HTMLElement');
+      assert.strictEqual(document.querySelector('body'), document.body);
+      assert.strictEqual(document.querySelector('_'), null);
+    });
+
+    QUnit.test("document.querySelectorAll", function(assert) {
+      assert.strictEqual(typeof document.querySelectorAll, 'function');
+      assert.ok(document.querySelectorAll('body')[0] instanceof HTMLElement, 'returns HTMLElement');
+      assert.strictEqual(document.querySelectorAll('body')[0], document.body);
+      assert.strictEqual(document.querySelectorAll('_').length, 0);
+    });
+
+    QUnit.test("Element classList", function(assert) {
+      var element = document.createElement('div');
+      var classList = element.classList;
+      var className = 'test-class';
+      assert.strictEqual(typeof classList, 'object');
+      assert.ok(classList instanceof DOMTokenList);
+      assert.strictEqual(typeof classList.add, 'function');
+      assert.strictEqual(typeof classList.remove, 'function');
+      assert.strictEqual(typeof classList.toggle, 'function');
+      assert.strictEqual(typeof classList.contains, 'function');
+      classList.add(className);
+      assert.strictEqual(classList.length, 1);
+      assert.strictEqual(classList.contains(className), true);
+      classList.remove(className);
+      assert.strictEqual(classList.contains(className), false);
+      classList.toggle(className);
+      assert.strictEqual(classList.contains(className), true);
+      classList.toggle(className, true);
+      assert.strictEqual(classList.contains(className), true);
+      classList.toggle(className);
+      assert.strictEqual(classList.contains(className), false);
+      classList.toggle(className, false);
+      assert.strictEqual(classList.contains(className), false);
+    }); /* global QUnit, Clarity */
+
+    QUnit.module("Dom Control");
+    QUnit.test("Create empty Element Wrapper", function(assert) {
+      var wrapper = Clarity();
+      assert.ok(wrapper instanceof Clarity.wrapper, 'Result is Wrapper');
+      assert.strictEqual(wrapper.length, 0);
+      assert.strictEqual(wrapper.elements.length, 0);
+    });
+
+    QUnit.test("Create Element Wrapper from string for HTML element", function(assert) {
+      var wrapper = Clarity('html');
+      assert.ok(wrapper instanceof Clarity.wrapper, 'Result is Wrapper');
+      assert.strictEqual(wrapper.length, 1);
+      assert.strictEqual(wrapper.elements.length, 1);
+      assert.strictEqual(wrapper.elements[0], document.querySelector('html'))
+    });
+
+    QUnit.test("Create Element Wrapper from HTML element", function(assert) {
+      var wrapper = Clarity(document.querySelector('html'));
+      assert.ok(wrapper instanceof Clarity.wrapper, 'Result is Wrapper');
+      assert.strictEqual(wrapper.length, 1);
+      assert.strictEqual(wrapper.elements.length, 1);
+      assert.strictEqual(wrapper.elements[0], document.querySelector('html'));
+    });
+
+    QUnit.module("Extras");
+    QUnit.test("Now", function(assert) {
+      assert.strictEqual(typeof Clarity.now, 'function');
+      assert.notEqual(Clarity.now(), Clarity.now(true), 'Can not be equal');
+      assert.ok(Clarity.now(), 'Returns date');
+      assert.ok(Clarity.now(true), 'Returns performance time');
+    });
+
+    QUnit.test("No operation", function(assert) {
+      assert.strictEqual(typeof Clarity.noop, 'function');
+      assert.strictEqual(Clarity.noop(), undefined);
+    });
+    /* global QUnit, Clarity */
+
+    QUnit.module("Ajax");
+    QUnit.test("Basic functionality", function(assert) {
+      assert.strictEqual(typeof Clarity.ajax, 'function');
+      var request = Clarity.ajax({
+        url: 'http://qb.net.pl'
+      });
+      assert.ok(request instanceof XMLHttpRequest);
+    });
+
+
+    /* TODO tests:
+     * GET, POST, PUT, DELETE
+     * exceptions
+     * done, error, always
+     * sending data
+     **/
+    /* global QUnit, Clarity */
+
+    QUnit.module("Attributes");
+
+    /* attr */
+
+    QUnit.test("Attributes methods", function(assert) {
+      var element = document.createElement('div');
+      var wrapper = Clarity(element);
+      assert.strictEqual(typeof wrapper.attr, 'function', 'attr is function');
+      assert.strictEqual(typeof wrapper.removeAttr, 'function', 'removeAttr is function');
+      assert.strictEqual(typeof wrapper.prop, 'function', 'prop is function');
+    });
+
+
+    QUnit.test("attr(key,value)", function(assert) {
+      var element = document.createElement('div');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      result = wrapper.attr('width', '100px');
+      /* TODO make this single assert */
+      assert.strictEqual(result, wrapper, 'Returns the same wrapper');
+      assert.strictEqual(result.length, length, 'Does not change length');
+      assert.strictEqual(result.elements[0], element, 'Does not change elements');
+    });
+
+
+    QUnit.test("attr(key)", function(assert) {
+      var element = document.createElement('div');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      wrapper.attr('width', '100px');
+      result = wrapper.attr('width');
+      assert.strictEqual(result, '100px', 'Returns value');
+      assert.strictEqual(wrapper.length, length, 'Does not change length');
+      assert.strictEqual(wrapper.elements[0], element, 'Does not change elements');
+      result = wrapper.attr('_');
+      assert.strictEqual(result, null, 'Returns null for nonexsistent attribue');
+    });
+
+
+    QUnit.test("attr({key:value})", function(assert) {
+      var element = document.createElement('div');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      result = wrapper.attr({
+        custom: 'someValue',
+        'font-size': '20px'
+      });
+      assert.strictEqual(result, wrapper, 'Returns the same wrapper');
+      assert.strictEqual(result.length, length, 'Does not change length');
+      assert.strictEqual(result.elements[0], element, 'Does not change elements');
+
+      result = wrapper.attr('custom');
+      assert.strictEqual(result, 'someValue', 'Sets value');
+    });
+
+    /* removeAttr */
+
+    QUnit.test("removeAttr", function(assert) {
+      var element = document.createElement('div');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      wrapper.attr('width', '100px');
+
+      result = wrapper.removeAttr('width');
+      assert.strictEqual(result, wrapper, 'Returns the same wrapper');
+      assert.strictEqual(result.length, length, 'Does not change length');
+      assert.strictEqual(result.elements[0], element, 'Does not change elements');
+
+      assert.strictEqual(wrapper.attr('attr'), null, 'Removes attribute');
+    });
+
+
+    /* prop */
+
+    QUnit.test("prop(key,value)", function(assert) {
+      var element = document.createElement('input');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      result = wrapper.prop('placeholder', 'Enter value');
+      assert.strictEqual(result, wrapper, 'Returns the same wrapper');
+      assert.strictEqual(result.length, length, 'Does not change length');
+      assert.strictEqual(result.elements[0], element, 'Does not change elements');
+    });
+
+
+    QUnit.test("prop(key)", function(assert) {
+      var element = document.createElement('input');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      wrapper.prop('placeholder', 'Enter value');
+      result = wrapper.prop('placeholder');
+      assert.strictEqual(result, 'Enter value', 'Returns value');
+      assert.strictEqual(wrapper.length, length, 'Does not change length');
+      assert.strictEqual(wrapper.elements[0], element, 'Does not change elements');
+      result = wrapper.prop('_');
+      assert.strictEqual(result, undefined, 'Returns undefined for nonexsistent property');
+    });
+
+
+    QUnit.test("prop({key:value})", function(assert) {
+      var element = document.createElement('input');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      result = wrapper.prop({
+        placeholder: 'Enter value',
+        value: 'test'
+      });
+      assert.strictEqual(result, wrapper, 'Returns the same wrapper');
+      assert.strictEqual(result.length, length, 'Does not change length');
+      assert.strictEqual(result.elements[0], element, 'Does not change elements');
+
+
+      result = wrapper.prop('value');
+      assert.strictEqual(result, 'test', 'Sets value');
+
+    });
+
+    /* global QUnit, Clarity */
+
+    QUnit.module("Claasses");
+
+    QUnit.test("Classes methods", function(assert) {
+      var element = document.createElement('div');
+      var wrapper = Clarity(element);
+      assert.strictEqual(typeof wrapper.hasClass, 'function', 'addClass is function');
+      assert.strictEqual(typeof wrapper.addClass, 'function', 'hasClass is function');
+      assert.strictEqual(typeof wrapper.removeClass, 'function', 'removeClass is function');
+      assert.strictEqual(typeof wrapper.toggleClass, 'function', 'toggleClass is function');
+    });
+
+
+    QUnit.test("addClass", function(assert) {
+      var element = document.createElement('div');
+      var wrapper = Clarity(element);
+      var length = wrapper.length;
+      var result;
+
+      result = wrapper.addClass('test-class');
+
+      assert.strictEqual(result, wrapper, 'Returns the same wrapper');
+      assert.strictEqual(result.length, length, 'Does not change length');
+      assert.strictEqual(result.elements[0], element, 'Does not change elements');
+    });
+  </script>
+</body>
+
+</html>
